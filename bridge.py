@@ -40,7 +40,7 @@ def unpack_values(buffer):
 	count = struct.unpack('>b', buffer[0:1])
 	values = []
 
-	for i in range(count):
+	while len(buffer) > 0:
 		offset, value = unpack_value(buffer)
 		values.append(value)
 		buffer = buffer[offset:]
@@ -79,10 +79,7 @@ except Exception as e:
 while True:
 	header = read_file.read(5)
 	function_index, length = struct.unpack('>bI', header)
-	args = []
-
-	if length > 0:
-		pass
+	args = unpack_values(read_file.read(length)) if length > 0 else []
 
 	try:
 		result = functions[function_index][1](*args)

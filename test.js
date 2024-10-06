@@ -6,3 +6,5 @@ console.log(functions)
 console.log(await functions.hello())
 console.log(await functions.foo(3))
 console.log(await functions.binary(Buffer.alloc(3)))
+
+process.kill()

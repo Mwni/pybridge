@@ -1,4 +1,3 @@
-import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { spawn } from 'child_process'
@@ -53,7 +52,7 @@ export default function createPythonBridge({ file, env = process.env, python = '
 
 		for(let value of args){
 			let data
-			let header = Buffer.alloc(1)
+			let header = Buffer.alloc(5)
 
 			if(value instanceof Buffer){
 				header.writeUInt8(1)
@@ -63,6 +62,7 @@ export default function createPythonBridge({ file, env = process.env, python = '
 				data = Buffer.from(JSON.stringify(value), 'utf8')
 			}
 
+			header.writeUInt32BE(data.length, 1)
 			buffers.push(header)
 			buffers.push(data)
 		}
