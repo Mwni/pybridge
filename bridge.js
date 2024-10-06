@@ -6,16 +6,19 @@ import { spawn } from 'child_process'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-export default function createPythonBridge({ file, env = process.env, python = 'python3', stdio = 'inherit' }){
+export default function createPythonBridge({ file, className, env = process.env, python = 'python3', stdio = 'inherit' }){
 	let queue = []
-	let process = spawn(
-		python,
-		[path.join(__dirname, 'bridge.py'), file],
-		{
-			stdio: [stdio, stdio, stdio, 'pipe', 'pipe'],
-			env,
-		}
-	)
+	let argv = [path.join(__dirname, 'bridge.py'), file]
+
+	if(className){
+		argv.push('--class')
+		argv.push(className)
+	}
+
+	let process = spawn(python, argv, {
+		stdio: [stdio, stdio, stdio, 'pipe', 'pipe'],
+		env,
+	})
 
 	let [ writeStream, readStream ] = process.stdio.slice(3)
 	let readBuffer = Buffer.alloc(0)

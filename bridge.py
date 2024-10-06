@@ -6,6 +6,7 @@ import importlib.util
 import inspect
 
 script = sys.argv[1]
+class_name = sys.argv[3] if len(sys.argv) == 4 else None
 read_fd = 3
 write_fd = 4
 
@@ -62,11 +63,22 @@ try:
 		raise '%s is not a python module' % script
 	
 	spec.loader.exec_module(module)
+
+	if class_name:
+		instance = getattr(module, class_name)()
+		functions = [
+			(name, getattr(instance, name)) for name
+			in dir(instance)
+			if callable(getattr(instance, name))
+			and not name.startswith('__')
+		]
+	else:
+		functions = [
+			(name, func) for name, func
+			in inspect.getmembers(module, inspect.isfunction)
+		]
+
 	
-	functions = [
-		(name, obj) for name, obj
-		in inspect.getmembers(module, inspect.isfunction)
-	]
 	
 	write_file.write(b'\x01' + pack_value([name for name, _ in functions]))
 	write_file.flush()
