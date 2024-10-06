@@ -1,0 +1,9 @@
+{
+	"name": "@mwni/pybridge",
+	"type": "module",
+	"version": "1.0.0",
+	"files": [
+		"bridge.js",
+		"bridge.py"
+	]
+}
