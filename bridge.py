@@ -24,16 +24,29 @@ def pack_value(value):
 
 def unpack_value(buffer):
 	type_idx, length = struct.unpack('>bI', buffer[0:5])
+	offset = 5 + length
 
-	if len(buffer) - 5 < length:
+	if len(buffer) < offset:
 		raise 'incomplete'
 	
-	value = buffer[5:5+length]
+	value = buffer[5:offset]
 
 	if type_idx == 1:
-		return value
+		return offset, value
 	else:
-		return json.loads(value.decode('utf-8'))
+		return offset, json.loads(value.decode('utf-8'))
+	
+def unpack_values(buffer):
+	count = struct.unpack('>b', buffer[0:1])
+	values = []
+
+	for i in range(count):
+		offset, value = unpack_value(buffer)
+		values.append(value)
+		buffer = buffer[offset:]
+
+	return values
+	
 	
 try:
 	script_dir, script_file = os.path.split(script)
@@ -64,27 +77,17 @@ except Exception as e:
 
 
 while True:
-	call_header = read_file.read(5)
-	
-	'''
-	if not length:
-		exit()
-		
-	message_length = struct.unpack('!I', length_data)[0]
+	header = read_file.read(5)
+	function_index, length = struct.unpack('>bI', header)
+	args = []
 
-	# Read the message
-	message_data = read_file.read(message_length)
-	if len(message_data) < message_length:
-		exit()
+	if length > 0:
+		pass
 
-	task = json.loads(message_data.decode('utf-8'))
-
-	result = DO_THING(**task)
-
-	result_data = json.dumps(result).encode('utf-8')
-	result_length = struct.pack('!I', len(result_data))
-
-	write_file.write(result_length)
-	write_file.write(result_data)
-	write_file.flush()
-'''
+	try:
+		result = functions[function_index][1](*args)
+		write_file.write(b'\x01' + pack_value(result))
+	except Exception as e:
+		write_file.write(b'\x00' + pack_value(str(e)))
+	finally:
+		write_file.flush()

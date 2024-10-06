@@ -48,22 +48,30 @@ export default function createPythonBridge({ file, env = process.env, python = '
 		}
 	})
 
-	function callPy(functionIndex, value){
-		let data
-		let dataType
+	function callPy(functionIndex, args){
+		let buffers = []
 
-		if(value instanceof Buffer){
-			dataType = 1
-			data = value
-		}else{
-			dataType = 0
-			data = Buffer.from(JSON.stringify(value), 'utf8')
+		for(let value of args){
+			let data
+			let header = Buffer.alloc(1)
+
+			if(value instanceof Buffer){
+				header.writeUInt8(1)
+				data = value
+			}else{
+				header.writeUInt8(0)
+				data = Buffer.from(JSON.stringify(value), 'utf8')
+			}
+
+			buffers.push(header)
+			buffers.push(data)
 		}
 
+		let data = Buffer.concat(buffers)
 		let header = Buffer.alloc(5)
-
-		header.writeUint8(functionIndex)
-		header.writeUint32BE(data.length)
+		
+		header.writeUint8(functionIndex, 0)
+		header.writeUint32BE(data.length, 1)
 
 		writeStream.write(header)
 		writeStream.write(data)
@@ -76,8 +84,8 @@ export default function createPythonBridge({ file, env = process.env, python = '
 			let functions = {}
 
 			for(let name of functionNames){
-				functions[name] = async value => {
-					callPy(functionNames.indexOf(name), value)
+				functions[name] = async (...args) => {
+					callPy(functionNames.indexOf(name), args)
 
 					return await new Promise((resolve, reject) => {
 						queue.push({
