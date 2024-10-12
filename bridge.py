@@ -90,6 +90,10 @@ except Exception as e:
 
 while True:
 	header = read_file.read(5)
+
+	if len(header) == 0:
+		continue
+
 	function_index, length = struct.unpack('>bI', header)
 	args = unpack_values(read_file.read(length)) if length > 0 else []
 
