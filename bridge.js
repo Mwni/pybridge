@@ -80,7 +80,10 @@ export default function createPythonBridge({ file, className, env = process.env,
 		writeStream.write(data)
 	}
 
-	process.on('error', error => reject(error))
+	process.on('error', error => {
+		let { reject } = queue.shift()
+		reject(error)
+	})
 	
 	return new Promise((res, rej) => {
 		let resolve = functionNames => {
